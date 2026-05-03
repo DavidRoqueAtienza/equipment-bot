@@ -1,0 +1,5 @@
+python-telegram-bot
+smartsheet-python-sdk
+opencv-python
+pyzbar
+pandas
