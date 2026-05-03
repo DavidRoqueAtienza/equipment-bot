@@ -1,7 +1,6 @@
 import re
 import cv2
 import smartsheet
-import pytesseract
 import os
 from pyzbar.pyzbar import decode
 from telegram import Update
@@ -51,37 +50,6 @@ def read_barcode(file_path):
     return normalize_value(barcodes[0].data.decode("utf-8"))
 
 
-# ===== OCR FALLBACK =====
-def read_ocr(file_path):
-    try:
-        image = cv2.imread(file_path)
-
-        if image is None:
-            return ""
-
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
-
-        thresh = cv2.threshold(
-            gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        )[1]
-
-        config = "--psm 6 -c tessedit_char_whitelist=0123456789"
-        text = pytesseract.image_to_string(thresh, config=config)
-
-        numbers = re.findall(r"\d+", text)
-        candidates = [n for n in numbers if len(n) >= 5]
-
-        if candidates:
-            return normalize_value(max(candidates, key=len))
-
-        if numbers:
-            return normalize_value(max(numbers, key=len))
-
-        return ""
-
-    except Exception:
-        return ""
 
 
 # ===== SERIAL DETECTION =====
@@ -91,13 +59,7 @@ def detect_serial(file_path):
     if barcode_value:
         return barcode_value, "barcode"
 
-    ocr_value = read_ocr(file_path)
-
-    if ocr_value:
-        return ocr_value, "ocr"
-
     return "", "none"
-
 
 # ===== SMARTSHEET UPDATE =====
 def update_smartsheet(serial, command):
