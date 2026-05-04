@@ -4,6 +4,8 @@ import smartsheet
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+from flask import Flask
+import threading
 
 
 # ===== CONFIG =====
@@ -225,6 +227,24 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Image processing error: {e}")
 
 
+# ===== KEEP ALIVE SERVER =====
+
+app_web = Flask(__name__)
+
+@app_web.route("/")
+def home():
+    return "Bot is alive"
+
+@app_web.route("/health")
+def health():
+    return "OK"
+
+
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    app_web.run(host="0.0.0.0", port=port)
+
+
 # ===== MAIN =====
 
 if __name__ == "__main__":
@@ -237,7 +257,8 @@ if __name__ == "__main__":
     if not SHEET_ID:
         raise ValueError("Missing SHEET_ID environment variable")
 
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+	threading.Thread(target=run_web, daemon=True).start()    
+	app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
