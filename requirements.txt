@@ -1,4 +1,3 @@
 python-telegram-bot
 smartsheet-python-sdk
 opencv-python-headless
-pyzbar

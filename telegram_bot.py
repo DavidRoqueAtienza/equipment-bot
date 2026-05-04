@@ -1,8 +1,7 @@
-import re
+import os
 import cv2
 import smartsheet
-import os
-from pyzbar.pyzbar import decode
+
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
@@ -23,6 +22,7 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 smartsheet_client = smartsheet.Smartsheet(SMARTSHEET_TOKEN)
 
 # ===== HELPERS =====
+
 def normalize_value(value):
     if value is None:
         return ""
@@ -35,24 +35,25 @@ def normalize_value(value):
     return value
 
 
-# ===== BARCODE READER =====
+# ===== QR / BARCODE READER =====
+
 def read_barcode(file_path):
     image = cv2.imread(file_path)
 
     if image is None:
         return ""
 
-    barcodes = decode(image)
+    detector = cv2.QRCodeDetector()
+    data, bbox, _ = detector.detectAndDecode(image)
 
-    if not barcodes:
+    if not data:
         return ""
 
-    return normalize_value(barcodes[0].data.decode("utf-8"))
-
-
+    return normalize_value(data)
 
 
 # ===== SERIAL DETECTION =====
+
 def detect_serial(file_path):
     barcode_value = read_barcode(file_path)
 
@@ -61,7 +62,9 @@ def detect_serial(file_path):
 
     return "", "none"
 
+
 # ===== SMARTSHEET UPDATE =====
+
 def update_smartsheet(serial, command):
     try:
         serial_clean = normalize_value(serial)
@@ -142,6 +145,7 @@ def update_smartsheet(serial, command):
 
 
 # ===== TEXT MESSAGE HANDLER =====
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
 
@@ -160,6 +164,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ===== PHOTO HANDLER =====
+
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Photo received. Processing...")
 
@@ -174,7 +179,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not detected_serial:
             await update.message.reply_text(
-                "No serial detected. Please take a clearer photo of the barcode."
+                "No serial detected. Please take a clearer photo of the QR/barcode."
             )
             return
 
@@ -207,7 +212,17 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ===== MAIN =====
+
 if __name__ == "__main__":
+    if not TELEGRAM_TOKEN:
+        raise ValueError("Missing TELEGRAM_TOKEN environment variable")
+
+    if not SMARTSHEET_TOKEN:
+        raise ValueError("Missing SMARTSHEET_TOKEN environment variable")
+
+    if not SHEET_ID:
+        raise ValueError("Missing SHEET_ID environment variable")
+
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
