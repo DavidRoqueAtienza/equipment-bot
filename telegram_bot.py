@@ -16,8 +16,6 @@ SHEET_ID = int(os.getenv("SHEET_ID"))
 SERIAL_COLUMN = "Serial Number"
 ID_REQUEST_COLUMN = "ID request"
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
 smartsheet_client = smartsheet.Smartsheet(SMARTSHEET_TOKEN)
 
 # ===== HELPERS =====
