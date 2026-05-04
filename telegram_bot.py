@@ -256,9 +256,8 @@ if __name__ == "__main__":
 
     if not SHEET_ID:
         raise ValueError("Missing SHEET_ID environment variable")
-
-	threading.Thread(target=run_web, daemon=True).start()    
-	app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    threading.Thread(target=run_web, daemon=True).start()
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
