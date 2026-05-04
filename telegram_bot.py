@@ -8,9 +8,9 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 # ===== CONFIG =====
 
 
-TELEGRAM_TOKEN = os.getenv("7696157057:AAEVHhM7HRdUHYHq_EExLJ3fu39D8qJkzr0")
-SMARTSHEET_TOKEN = os.getenv("M3vmRneTpdBhPuLqYQecdJKjNqNjY5eHR4meM")
-SHEET_ID = int(os.getenv("2162883748122500"))
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+SMARTSHEET_TOKEN = os.getenv("SMARTSHEET_TOKEN")
+SHEET_ID = int(os.getenv("SHEET_ID"))
 
 
 SERIAL_COLUMN = "Serial Number"
