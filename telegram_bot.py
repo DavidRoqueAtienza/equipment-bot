@@ -5,18 +5,18 @@ import smartsheet
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
-# ===== CONFIG =====
 
+# ===== CONFIG =====
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 SMARTSHEET_TOKEN = os.getenv("SMARTSHEET_TOKEN")
 SHEET_ID = int(os.getenv("SHEET_ID"))
 
-
 SERIAL_COLUMN = "Serial Number"
 ID_REQUEST_COLUMN = "ID request"
 
 smartsheet_client = smartsheet.Smartsheet(SMARTSHEET_TOKEN)
+
 
 # ===== HELPERS =====
 
@@ -30,6 +30,27 @@ def normalize_value(value):
         value = value[:-2]
 
     return value
+
+
+def get_help_message(serial=None):
+    message = (
+        "❌ Command not recognized.\n\n"
+        "Use one of these commands:\n\n"
+        "➡️ OUT OExxx\n"
+        "➡️ RETURN\n\n"
+        "Examples:\n"
+        "213260 OUT OE123\n"
+        "213260 RETURN"
+    )
+
+    if serial:
+        message += (
+            "\n\nWith the detected serial:\n"
+            f"{serial} OUT OE123\n"
+            f"{serial} RETURN"
+        )
+
+    return message
 
 
 # ===== QR / BARCODE READER =====
@@ -103,7 +124,7 @@ def update_smartsheet(serial, command):
             parts = command.split()
 
             if len(parts) < 2:
-                return "Invalid command. Use: OUT OExxx"
+                return get_help_message(serial_clean)
 
             new_id_request = parts[1].strip()
 
@@ -111,7 +132,7 @@ def update_smartsheet(serial, command):
             new_id_request = ""
 
         else:
-            return "Unknown command. Use: OUT OExxx or RETURN"
+            return get_help_message(serial_clean)
 
         new_row = smartsheet.models.Row()
         new_row.id = target_row.id
@@ -126,13 +147,13 @@ def update_smartsheet(serial, command):
 
         if new_id_request:
             return (
-                "Update successful\n"
+                "✅ Update successful\n"
                 f"Serial Number: {serial_clean}\n"
                 f"ID request: {new_id_request}"
             )
 
         return (
-            "Return successful\n"
+            "✅ Return successful\n"
             f"Serial Number: {serial_clean}\n"
             "ID request cleared"
         )
@@ -149,11 +170,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         serial, command = text.split(maxsplit=1)
     except ValueError:
-        await update.message.reply_text(
-            "Use this format:\n"
-            "213260 OUT OE123\n"
-            "213260 RETURN"
-        )
+        await update.message.reply_text(get_help_message())
         return
 
     response = update_smartsheet(serial, command)
@@ -197,10 +214,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"Serial detected: {detected_serial}\n"
                 f"Method: {method}\n\n"
                 "Now send one of these commands:\n"
-                f"{detected_serial} OUT OExxx\n"
+                f"{detected_serial} OUT OE123\n"
                 f"{detected_serial} RETURN\n\n"
                 "Or send the photo with caption:\n"
-                "OUT OExxx\n"
+                "OUT OE123\n"
                 "RETURN"
             )
 
